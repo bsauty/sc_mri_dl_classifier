@@ -1,5 +1,6 @@
 from bids_neuropoly import bids
 from medicaltorch import datasets as mt_datasets
+from medicaltorch import transforms as mt_transforms
 
 
 dct_label_map = { "laacq-MToff_MTS" : 0, "acq-MTon_MTS" : 1, 

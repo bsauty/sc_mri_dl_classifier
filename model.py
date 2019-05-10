@@ -5,8 +5,6 @@ import torch.nn.functional as F
 from torchvision import transforms, models
 from torch.utils.data.sampler import SubsetRandomSampler
 
-
-
 class DownConv(nn.Module):
     def __init__(self, in_ch, out_ch, bn_momentum=0.1):
         super(DownConv, self).__init__()
@@ -38,7 +36,7 @@ class Classifier(nn.Module):
         self.dense1 = nn.Linear(16384, 256)
         self.drop = nn.Dropout2d(drop_rate)
         self.dense2 = nn.Linear(256, 6)
-        self.soft = nn.Softmax()
+        self.soft = nn.Softmax(dim=-1)
 
     def forward(self, x):
         x1 = self.conv1(x)
