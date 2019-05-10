@@ -3,10 +3,25 @@ import time
 import shutil
 import sys
 import json
-from tqdm import tqdm_notebook
+from tqdm import tqdm
+
+import torch
+from torch import nn
+from torch import optim
+import torch.nn.functional as F
+from torchvision import transforms, models
+from torch.utils.data.sampler import SubsetRandomSampler
+from torch.utils.data import DataLoader, ConcatDataset
+
+
+from bids_neuropoly import bids
+from medicaltorch import datasets as mt_datasets
+from medicaltorch import transforms as mt_transforms
 
 import os
 
+import loader
+import model as M
 
 def get_modality(batch):
     labels = []
@@ -85,8 +100,8 @@ def cmd_train(context):
     # This code will iterate over the folders and load the data, filtering
     # the slices without labels and then concatenating all the datasets together
     train_datasets = []
-    for bids_ds in tqdm_notebook(context["bids_path_train"], desc="Loading training set"):
-        ds_train = BidsDataset(bids_ds,
+    for bids_ds in tqdm(context["bids_path_train"], desc="Loading training set"):
+        ds_train = loader.BidsDataset(bids_ds,
                                transform=train_transform)
         train_datasets.append(ds_train)
 
@@ -99,8 +114,8 @@ def cmd_train(context):
 
     # Validation dataset ------------------------------------------------------
     validation_datasets = []
-    for bids_ds in tqdm_notebook(context["bids_path_validation"], desc="Loading validation set"):
-        ds_val = BidsDataset(bids_ds,
+    for bids_ds in tqdm(context["bids_path_validation"], desc="Loading validation set"):
+        ds_val = loader.BidsDataset(bids_ds,
                              transform=val_transform)
         validation_datasets.append(ds_val)
 
@@ -111,7 +126,7 @@ def cmd_train(context):
                             collate_fn=mt_datasets.mt_collate,
                             num_workers=1)
 
-    model = Classifier(drop_rate=context["dropout_rate"],
+    model = M.Classifier(drop_rate=context["dropout_rate"],
                        bn_momentum=context["batch_norm_momentum"])
     model.cuda()
 
@@ -127,7 +142,7 @@ def cmd_train(context):
 
     # Training loop -----------------------------------------------------------
     best_validation_loss = float("inf")
-    for epoch in tqdm_notebook(range(1, num_epochs+1), desc="Training"):
+    for epoch in tqdm(range(1, num_epochs+1), desc="Training"):
         start_time = time.time()
 
         scheduler.step()
@@ -160,8 +175,7 @@ def cmd_train(context):
 
         train_loss_total_avg = train_loss_total / num_steps
 
-        #tqdm.write(f"Epoch {epoch} training loss: {train_loss_total_avg:.4f}.")
-        print(f"Epoch {epoch} training loss: {train_loss_total_avg:.4f}.")
+        tqdm.write(f"Epoch {epoch} training loss: {train_loss_total_avg:.4f}.")
         
         # Validation loop -----------------------------------------------------
         model.eval()
@@ -186,13 +200,11 @@ def cmd_train(context):
 
         val_loss_total_avg = val_loss_total / num_steps
 
-        #tqdm.write(f"Epoch {epoch} validation loss: {val_loss_total_avg:.4f}.")
-        print(f"Epoch {epoch} validation loss: {val_loss_total_avg:.4f}.")
+        tqdm.write(f"Epoch {epoch} validation loss: {val_loss_total_avg:.4f}.")
         
         end_time = time.time()
         total_time = end_time - start_time
-        #tqdm.write("Epoch {} took {:.2f} seconds.".format(epoch, total_time))
-        print("Epoch {} took {:.2f} seconds.".format(epoch, total_time))
+        tqdm.write("Epoch {} took {:.2f} seconds.".format(epoch, total_time))
         
         if val_loss_total_avg < best_validation_loss:
             best_validation_loss = val_loss_total_avg
