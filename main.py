@@ -23,6 +23,9 @@ import os
 import loader
 import model as M
 
+import torch.backends.cudnn as cudnn
+cudnn.benchmark = True
+
 def get_modality(batch):
     labels = []
     for acq in batch['input_metadata']:
