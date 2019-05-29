@@ -26,8 +26,8 @@ source venv-classifier/bin/activate
 Then, install all requirements using `pip`:
 
 ```
-git clone https://github.com/neuropoly/ivado-medical-imaging.git
-cd ivado-medical-imaging
+git clone https://github.com/bsauty/sc_mri_dl_classifier
+cd sc_mri_dl_classifier
 pip install -e .
 ```
 
