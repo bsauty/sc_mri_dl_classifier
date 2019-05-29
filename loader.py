@@ -3,9 +3,31 @@ from medicaltorch import datasets as mt_datasets
 from medicaltorch import transforms as mt_transforms
 
 
-dct_label_map = { "laacq-MToff_MTS" : 0, "acq-MTon_MTS" : 1, 
-                 "acq-T1w_MTS" : 2, "T1w" : 3, "T2star" : 4, "T2w" : 5}
 
+class SliceFilter(mt_filters.SliceFilter):
+    """This class extends the SliceFilter that already
+    filters for empty labels and inputs. It will filter
+    slices that has only zeros after cropping. To avoid
+    feeding empty inputs into the network.
+    """
+    def __call__(self, sample):
+        super_ret = super().__call__(sample)
+
+        # Already filtered by base class
+        if not super_ret:
+            return super_ret
+
+        # Filter slices where there are no values after cropping
+        input_img = Image.fromarray(sample['input'], mode='F')
+        input_cropped = transforms.functional.center_crop(input_img, (128, 128))
+        input_cropped = np.array(input_cropped)
+        count = np.count_nonzero(input_cropped)
+
+        if count <= 0:
+            return False
+
+        return True
+    
 
 class BIDSSegPair2D(mt_datasets.SegmentationPair2D):
     def __init__(self, input_filename, gt_filename, metadata):
