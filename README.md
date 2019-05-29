@@ -19,8 +19,8 @@ The `config.json` and `config_small.json` are files that encapsulate all necessa
 This project requires Python 3.6 and PyTorch >= 1.0.1. We recommend using a virtual environment:
 
 ~~~
-virtualenv venv-classifier --python=python3.6
-source venv-classifier/bin/activate
+conda create -n classifier python=3.6
+source activate classifier
 ~~~
 
 Then, install all requirements using `pip`:
@@ -34,10 +34,10 @@ pip install -e .
 
 ## Training
 
-To train the network, just run `main.py`, example below:
+To train the network, just prompt the `classify` command that will appear after installation, example below:
 
 ```
-python main.py config.json
+classify config.json
 ```
 
 The `config.json` is a configuration example. A description of each parameter is provided in the code. 
