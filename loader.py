@@ -1,6 +1,6 @@
 from bids_neuropoly import bids
 from medicaltorch import datasets as mt_datasets
-from medicaltorch import transforms as mt_transforms
+from medicaltorch import transforms as mt_transforms, mt_filters
 
 
 
