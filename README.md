@@ -12,7 +12,7 @@ It is conceived for the purpose avec the [IVADO medical Imaging project](https:/
 ## Files
 
 The actual code is comprised in the three python files `main.py`, `loader.py` and `model.py` but we refactored it to fit into a notebook for debugging and vizualisation issues `classifier_mri_modalities.ipynb`.
-The `config.json` and `config_small.json` are files that encapsulate all necessary parameters for training the model (find extensive information about it in main.py).
+The `config.json` and `config_small.json` are files that encapsulate all necessary parameters for training the model (find extensive information about it in `main.py`) and `config_small.json` allows faster training with fewer centers.
 
 ## Installing
 
