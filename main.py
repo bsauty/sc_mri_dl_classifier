@@ -9,7 +9,7 @@ import torch
 from torch import nn
 from torch import optim
 import torch.nn.functional as F
-from torchvision import transforms, models
+from torchvision import transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader, ConcatDataset
 
@@ -105,7 +105,8 @@ def cmd_train(context):
     train_datasets = []
     for bids_ds in tqdm(context["bids_path_train"], desc="Loading training set"):
         ds_train = loader.BidsDataset(bids_ds,
-                               transform=train_transform)
+                               transform=train_transform,
+                               slice_filter_fn=SliceFilter())
         train_datasets.append(ds_train)
 
     ds_train = ConcatDataset(train_datasets)
@@ -119,7 +120,8 @@ def cmd_train(context):
     validation_datasets = []
     for bids_ds in tqdm(context["bids_path_validation"], desc="Loading validation set"):
         ds_val = loader.BidsDataset(bids_ds,
-                             transform=val_transform)
+                             transform=val_transform,
+                             slice_filter_fn=SliceFilter())
         validation_datasets.append(ds_val)
 
     ds_val = ConcatDataset(validation_datasets)
@@ -136,15 +138,23 @@ def cmd_train(context):
     num_epochs = context["num_epochs"]
     initial_lr = context["initial_lr"]
 
-    # Using Adam with cosine annealing learning rate
-    optimizer = optim.Adam(model.parameters(), lr=initial_lr)
+    # Using SGD with cosine annealing learning rate
+    optimizer = optim.SGD(model.parameters(), lr=initial_lr)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, num_epochs)
 
     # Write the metrics, images, etc to TensorBoard format
     writer = SummaryWriter(log_dir=context["log_directory"])
-
+    
+    # Cross Entropy Loss
+    criterion = nn.CrossEntropyLoss()
+    
     # Training loop -----------------------------------------------------------
     best_validation_loss = float("inf")
+    
+    lst_train_loss = []
+    lst_val_loss = []
+    lst_accuracy = []
+
     for epoch in tqdm(range(1, num_epochs+1), desc="Training"):
         start_time = time.time()
 
@@ -162,12 +172,11 @@ def cmd_train(context):
             input_labels = get_modality(batch)
             
             var_input = input_samples.cuda()
-            var_labels = OneHotEncode(input_labels).cuda()
+            var_labels = torch.cuda.LongTensor(input_labels).cuda(non_blocking=True)
 
-            preds = model(var_input)
+            outputs = model(var_input)
 
-            CE_loss = nn.BCELoss()
-            loss = CE_loss(preds, var_labels)
+            loss = criterion(outputs, var_labels)
             train_loss_total += loss.item()
 
             optimizer.zero_grad()
@@ -177,6 +186,7 @@ def cmd_train(context):
             num_steps += 1
 
         train_loss_total_avg = train_loss_total / num_steps
+        lst_train_loss.append(train_loss_total_avg)
 
         tqdm.write(f"Epoch {epoch} training loss: {train_loss_total_avg:.4f}.")
         
@@ -184,6 +194,10 @@ def cmd_train(context):
         model.eval()
         val_loss_total = 0.0
         num_steps = 0
+        
+        val_accuracy = 0
+        num_samples = 0
+
 
         for i, batch in enumerate(val_loader):
             input_samples = batch["input"]
@@ -191,19 +205,27 @@ def cmd_train(context):
             
             with torch.no_grad():
                 var_input = input_samples.cuda()
-                var_labels = OneHotEncode(input_labels).cuda()
+                var_labels = torch.cuda.LongTensor(input_labels).cuda(non_blocking=True)
 
-                preds = model(var_input)
+                outputs = model(var_input)
+                _, preds = torch.max(outputs, 1)
 
-                CE_loss = nn.BCELoss()
-                loss = CE_loss(preds, var_labels)
+                loss = criterion(outputs, var_labels)
                 val_loss_total += loss.item()
 
+                val_accuracy += int((var_labels == preds).sum())
+
             num_steps += 1
+            num_samples += context['batch_size']
 
+            
         val_loss_total_avg = val_loss_total / num_steps
-
+        lst_val_loss.append(val_loss_total_avg)
         tqdm.write(f"Epoch {epoch} validation loss: {val_loss_total_avg:.4f}.")
+        
+        val_accuracy_avg = 100 * val_accuracy / num_samples
+        lst_accuracy.append(val_accuracy_avg)
+        tqdm.write(f"Epoch {epoch} accuracy : {val_accuracy_avg:.4f}.")
         
         end_time = time.time()
         total_time = end_time - start_time
@@ -215,6 +237,25 @@ def cmd_train(context):
 
     # save final model
     torch.save(model, "./"+context["log_directory"]+"/final_model.pt")
+    
+    # save the metrics
+    parameters = "CrossEntropyLoss, batchsize=" + str(context['batch_size'])
+    parameters += ", initial_lr=" + str(context['initial_lr'])
+    parameters += ", dropout=" + str(context['dropout_rate'])
+        
+    plt.subplot(2,1,1)
+    plt.title(parameters)
+    plt.plot(lst_train_loss, color='red', label='Training')
+    plt.plot(lst_val_loss, color='blue', label='Validation')
+    plt.legend(loc='upper right')
+    plt.ylabel('Loss')
+    
+    plt.subplot(2,1,2)
+    plt.plot(lst_accuracy)
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    
+    plt.savefig(parameters+'.png')
     
     return
 
