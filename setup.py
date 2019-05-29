@@ -22,7 +22,7 @@ setup(
     install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'classify=main.py',
+            'classify=main:run_main',
         ],
     },
 )
