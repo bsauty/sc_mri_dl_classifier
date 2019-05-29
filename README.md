@@ -43,7 +43,9 @@ python main.py config.json
 The `config.json` is a configuration example. A description of each parameter is provided in the code. 
 
 After training is over a figure of the losses (training loss and validation loss) as well as the accuracy will be saved in the folder.
-With the provided config file we reached 86% accuracy for each slice which allows us to predict an acquisition's modality with an accuracy over 99.988% accuracy as evaluated by a numerical simulation in the notebook. 
+With the provided config file we reached 86% accuracy for each slice which allows us to predict an acquisition's modality with an accuracy over 99.998% accuracy as evaluated by a numerical simulation in the notebook. 
+
+![](metrics.png)
 
 ## Data
 
