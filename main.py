@@ -17,6 +17,9 @@ from torch.utils.data import DataLoader, ConcatDataset
 from bids_neuropoly import bids
 from medicaltorch import datasets as mt_datasets
 from medicaltorch import transforms as mt_transforms
+from medicaltorch import filters as mt_filters
+
+from PIL import Image
 
 import os
 
@@ -106,7 +109,7 @@ def cmd_train(context):
     for bids_ds in tqdm(context["bids_path_train"], desc="Loading training set"):
         ds_train = loader.BidsDataset(bids_ds,
                                transform=train_transform,
-                               slice_filter_fn=SliceFilter())
+                               slice_filter_fn=loader.SliceFilter())
         train_datasets.append(ds_train)
 
     ds_train = ConcatDataset(train_datasets)
@@ -121,7 +124,7 @@ def cmd_train(context):
     for bids_ds in tqdm(context["bids_path_validation"], desc="Loading validation set"):
         ds_val = loader.BidsDataset(bids_ds,
                              transform=val_transform,
-                             slice_filter_fn=SliceFilter())
+                             slice_filter_fn=loader.SliceFilter())
         validation_datasets.append(ds_val)
 
     ds_val = ConcatDataset(validation_datasets)

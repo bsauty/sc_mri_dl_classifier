@@ -1,8 +1,11 @@
 from bids_neuropoly import bids
 from medicaltorch import datasets as mt_datasets
-from medicaltorch import transforms as mt_transforms, mt_filters
+from medicaltorch import transforms as mt_transforms
+from medicaltorch import filters as mt_filters
 
+import numpy as np 
 
+from PIL import Image
 
 class SliceFilter(mt_filters.SliceFilter):
     """This class extends the SliceFilter that already
@@ -19,7 +22,7 @@ class SliceFilter(mt_filters.SliceFilter):
 
         # Filter slices where there are no values after cropping
         input_img = Image.fromarray(sample['input'], mode='F')
-        input_cropped = transforms.functional.center_crop(input_img, (128, 128))
+        input_cropped = mt_transforms.F.center_crop(input_img, (128, 128))
         input_cropped = np.array(input_cropped)
         count = np.count_nonzero(input_cropped)
 
