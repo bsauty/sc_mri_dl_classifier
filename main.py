@@ -230,6 +230,17 @@ def cmd_train(context):
         lst_accuracy.append(val_accuracy_avg)
         tqdm.write(f"Epoch {epoch} accuracy : {val_accuracy_avg:.4f}.")
         
+        # add metrics for tensorboard
+        writer.add_scalars('validation metrics', {
+            'accuracy' :val_accuracy_avg,
+        }, epoch)
+        
+        writer.add_scalars('losses', {
+            'train_loss': train_loss_total_avg,
+            'val_loss': val_loss_total_avg,
+        }, epoch)
+
+        
         end_time = time.time()
         total_time = end_time - start_time
         tqdm.write("Epoch {} took {:.2f} seconds.".format(epoch, total_time))
@@ -242,9 +253,9 @@ def cmd_train(context):
     torch.save(model, "./"+context["log_directory"]+"/final_model.pt")
     
     # save the metrics
-    parameters = "CrossEntropyLoss, batchsize=" + str(context['batch_size'])
-    parameters += ", initial_lr=" + str(context['initial_lr'])
-    parameters += ", dropout=" + str(context['dropout_rate'])
+    parameters = "CrossEntropyLoss/batchsize=" + str(context['batch_size'])
+    parameters += "/initial_lr=" + str(context['initial_lr'])
+    parameters += "/dropout=" + str(context['dropout_rate'])
         
     plt.subplot(2,1,1)
     plt.title(parameters)
