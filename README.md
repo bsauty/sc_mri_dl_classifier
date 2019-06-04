@@ -53,7 +53,7 @@ With the provided config file we reached over 93% accuracy for each slice which 
 
 ## Data
 
-The working dataset is derived from the [Spinal Cord MRI Public Database](https://osf.io/76jkx/). 
+The working dataset is derived from the [Spinal Cord MRI Public Database](https://openneuro.org/datasets/ds001919). 
 
 The data structure is compatible with [BIDS](http://bids.neuroimaging.io/) and is exemplified below:
 ~~~
