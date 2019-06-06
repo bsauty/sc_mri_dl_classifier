@@ -295,19 +295,23 @@ def cmd_test(context):
     
     np.set_printoptions(precision=2)
 
+    if not(os.path.exists("./temp/")):
+        os.makedirs("./temp/")
+        
     class_names = ["MToff_MTS", "MTon_MTS", "T1w_MTS", "T1w", "T2star", "T2w"]
     # Plot normalized confusion matrix
-    cm = utils.plot_confusion_matrix(true_labels, guessed_labels, classes=class_names, normalize=True,
+    plot_confusion_matrix(true_labels, guessed_labels, classes=class_names, normalize=True,
                           title='Normalized confusion matrix')
-    writer.add_image('Test accuracy', cm)
-    
-    metrics = utils.plot_metrics(np.array([recall, precision]), accuracy, class_names)
-    writer.add_image('Test metrics', metrics)
+    plt.savefig("./temp/test_cm.png")
+    plot_metrics(np.array([recall, precision]), accuracy, class_names)
+    plt.savefig("./temp/test_accuracy.png")
     
     tqdm.write(f"Accuracy over test slices : {accuracy}")
     tqdm.write(f"Recall over test slices : {recall}")
     tqdm.write(f"Precision over test slices : {precision}")
     
+    open("./temp/test_cm.png")
+    open("./temp/test_accuracy.png")
     return
 
 
