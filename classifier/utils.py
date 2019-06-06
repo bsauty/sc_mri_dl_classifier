@@ -1,3 +1,9 @@
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import os
+import numpy as np
+from PIL import Image
+
 def get_modality(batch):
     labels = []
     for acq in batch['input_metadata']:
@@ -69,7 +75,10 @@ def plot_confusion_matrix(y_true, y_pred, classes,
                     ha="center", va="center",
                     color="white" if cm[i, j] > thresh else "black")
     fig.tight_layout()
-    return ax
+    fig.savefig('temp.png')
+    image = Image.open('temp.png')
+    test = np.array(image)
+    return test
 
 def plot_metrics(metrics, acc, classes,
                 title="Validation metrics",
@@ -99,5 +108,7 @@ def plot_metrics(metrics, acc, classes,
                     ha="center", va="center",
                     color="black")
     fig.tight_layout()
-    
-    return ax
+    fig.savefig('temp.png')
+    image = Image.open('temp.png')
+    test = np.array(image)
+    return test
