@@ -3,6 +3,7 @@ import time
 import shutil
 import sys
 import json
+import numpy as np
 from tqdm import tqdm
 
 import torch
@@ -18,6 +19,10 @@ from bids_neuropoly import bids
 from medicaltorch import datasets as mt_datasets
 from medicaltorch import transforms as mt_transforms
 from medicaltorch import filters as mt_filters
+
+from sklearn.metrics import precision_score
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import recall_score
 
 from PIL import Image
 
@@ -141,7 +146,7 @@ def cmd_train(context):
         
         for i, batch in enumerate(train_loader):
             input_samples = batch["input"]
-            input_labels = get_modality(batch)
+            input_labels = utils.get_modality(batch)
             
             var_input = input_samples.cuda()
             var_labels = torch.cuda.LongTensor(input_labels).cuda(non_blocking=True)
@@ -167,13 +172,16 @@ def cmd_train(context):
         val_loss_total = 0.0
         num_steps = 0
         
-        val_accuracy = 0
-        num_samples = 0
+        #setting the lists for confusion matrix
+        true_labels = []
+        guessed_labels = []
 
 
         for i, batch in enumerate(val_loader):
             input_samples = batch["input"]
-            input_labels = get_modality(batch)
+            input_labels = utils.get_modality(batch)
+
+            true_labels += input_labels
             
             with torch.no_grad():
                 var_input = input_samples.cuda()
@@ -181,27 +189,32 @@ def cmd_train(context):
 
                 outputs = model(var_input)
                 _, preds = torch.max(outputs, 1)
+                
+                lst_labels = [int(x) for x in preds]
+                guessed_labels += lst_labels
 
                 loss = criterion(outputs, var_labels)
                 val_loss_total += loss.item()
 
-                val_accuracy += int((var_labels == preds).sum())
 
             num_steps += 1
-            num_samples += context['batch_size']
 
+            
+        accuracy = accuracy_score(true_labels, guessed_labels)
+        recall = recall_score(true_labels, guessed_labels, average=None)
+        precision = precision_score(true_labels, guessed_labels, average=None)
+            
             
         val_loss_total_avg = val_loss_total / num_steps
         lst_val_loss.append(val_loss_total_avg)
         tqdm.write(f"Epoch {epoch} validation loss: {val_loss_total_avg:.4f}.")
         
-        val_accuracy_avg = 100 * val_accuracy / num_samples
-        lst_accuracy.append(val_accuracy_avg)
-        tqdm.write(f"Epoch {epoch} accuracy : {val_accuracy_avg:.4f}.")
+        lst_accuracy.append(accuracy)
+        tqdm.write(f"Epoch {epoch} accuracy : {accuracy:.4f}.")
         
         # add metrics for tensorboard
         writer.add_scalars('validation metrics', {
-            'accuracy' :val_accuracy_avg,
+            'accuracy' :accuracy,
         }, epoch)
         
         writer.add_scalars('losses', {
@@ -216,29 +229,11 @@ def cmd_train(context):
         
         if val_loss_total_avg < best_validation_loss:
             best_validation_loss = val_loss_total_avg
-            torch.save(model, "./"+context["log_directory"]+"/best_model.pt")
+            torch.save(model.state_dict(), "./"+context["log_directory"]+"/best_model.pt")
 
     # save final model
-    torch.save(model, "./"+context["log_directory"]+"/final_model.pt")
+    torch.save(model.state_dict(), "./"+context["log_directory"]+"/final_model.pt")
     
-    # save the metrics
-    parameters = "CrossEntropyLoss/batchsize=" + str(context['batch_size'])
-    parameters += "/initial_lr=" + str(context['initial_lr'])
-    parameters += "/dropout=" + str(context['dropout_rate'])
-        
-    plt.subplot(2,1,1)
-    plt.title(parameters)
-    plt.plot(lst_train_loss, color='red', label='Training')
-    plt.plot(lst_val_loss, color='blue', label='Validation')
-    plt.legend(loc='upper right')
-    plt.ylabel('Loss')
-    
-    plt.subplot(2,1,2)
-    plt.plot(lst_accuracy)
-    plt.ylabel('Accuracy')
-    plt.xlabel('Epoch')
-    
-    plt.savefig(parameters+'.png')
     
     return
 
@@ -256,15 +251,15 @@ def cmd_test(context):
     ])
 
     test_datasets = []
-    for bids_ds in tqdm_notebook(context["bids_path_test"], desc="Loading test set"):
-        ds_test = BidsDataset(bids_ds,
+    for bids_ds in tqdm(context["bids_path_test"], desc="Loading test set"):
+        ds_test = loader.BidsDataset(bids_ds,
                                      transform=val_transform,
-                                     slice_filter_fn=SliceFilter())
+                                     slice_filter_fn=loader.SliceFilter())
         test_datasets.append(ds_test)
 
 
     ds_test = ConcatDataset(test_datasets)
-    print(f"Loaded {len(ds_test)} axial slices for the test set.")
+    tqdm.write(f"Loaded {len(ds_test)} axial slices for the test set.")
     test_loader = DataLoader(ds_test, batch_size=context["batch_size"],
                              shuffle=True, pin_memory=True,
                              collate_fn=mt_datasets.mt_collate,
@@ -280,7 +275,7 @@ def cmd_test(context):
 
     for i, batch in enumerate(test_loader):
         input_samples = batch["input"]
-        input_labels = get_modality(batch)
+        input_labels = utils.get_modality(batch)
         
         true_labels += input_labels
 
@@ -302,11 +297,11 @@ def cmd_test(context):
 
     class_names = ["MToff_MTS", "MTon_MTS", "T1w_MTS", "T1w", "T2star", "T2w"]
     # Plot normalized confusion matrix
-    cm = plot_confusion_matrix(true_labels, guessed_labels, classes=class_names, normalize=True,
+    cm = utils.plot_confusion_matrix(true_labels, guessed_labels, classes=class_names, normalize=True,
                           title='Normalized confusion matrix')
     writer.add_image('Test accuracy', cm)
     
-    metrics = plot_metrics(np.array([recall, precision]), accuracy, class_names)
+    metrics = utils.plot_metrics(np.array([recall, precision]), accuracy, class_names)
     writer.add_image('Test metrics', metrics)
     
     tqdm.write(f"Accuracy over test slices : {accuracy}")
