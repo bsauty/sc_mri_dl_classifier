@@ -49,8 +49,8 @@ After training is over a figure of the losses (training loss and validation loss
 
 With the provided config file we reached over 95% accuracy for each slice which allows us to predict an acquisition's modality with an even higher accuracy. In the best case (ie. if the error was uniformly spread), it would reach over 99,99% as evaluated by a numerical simulation in the notebook. However error is probably systematic in certain acquisition, lowering the overall accuracy. Below is the confusion matrix over the test centers listed in  `config.json` for each slice (more than 2000 slices).
 
+![](images/test_cm.png)
 ![](images/test_accuracy.png)
-![](images/test_metrics.png)
 
 ## Data
 
