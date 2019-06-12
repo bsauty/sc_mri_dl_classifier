@@ -25,6 +25,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import recall_score
 
 from PIL import Image
+import matplotlib.pyplot as plt
 
 import os
 
@@ -265,7 +266,8 @@ def cmd_test(context):
                              collate_fn=mt_datasets.mt_collate,
                              num_workers=1)
 
-    model = torch.load("./"+context["log_directory"]+"/best_model.pt")
+    model = M.Classifier()
+    model.load_state_dict(torch.load("./"+context["log_directory"]+"/best_model.pt", map_location="cuda:0"))
     model.cuda()
     model.eval()
     
@@ -293,31 +295,34 @@ def cmd_test(context):
     recall = recall_score(true_labels, guessed_labels, average=None)
     precision = precision_score(true_labels, guessed_labels, average=None)
     
+    '''
     np.set_printoptions(precision=2)
-
+    
     if not(os.path.exists("./temp/")):
         os.makedirs("./temp/")
         
     class_names = ["MToff_MTS", "MTon_MTS", "T1w_MTS", "T1w", "T2star", "T2w"]
     # Plot normalized confusion matrix
-    plot_confusion_matrix(true_labels, guessed_labels, classes=class_names, normalize=True,
+    utils.plot_confusion_matrix(true_labels, guessed_labels, classes=class_names, normalize=True,
                           title='Normalized confusion matrix')
     plt.savefig("./temp/test_cm.png")
-    plot_metrics(np.array([recall, precision]), accuracy, class_names)
+    utils.plot_metrics(np.array([recall, precision]), accuracy, class_names)
     plt.savefig("./temp/test_accuracy.png")
+    
+    open("./temp/test_cm.png")
+    open("./temp/test_accuracy.png")'''
     
     tqdm.write(f"Accuracy over test slices : {accuracy}")
     tqdm.write(f"Recall over test slices : {recall}")
     tqdm.write(f"Precision over test slices : {precision}")
     
-    open("./temp/test_cm.png")
-    open("./temp/test_accuracy.png")
+
     return
 
 
 def run_main():
     if len(sys.argv) <= 1:
-        print("\nivadomed [config.json]\n")
+        print("\nclassify [config.json]\n")
         return
 
     with open(sys.argv[1], "r") as fhandle:
@@ -331,6 +336,4 @@ def run_main():
     elif command == 'test':
         cmd_test(context)
 
-        
-if __name__ == "__main__":
-    run_main()
+run_main()
