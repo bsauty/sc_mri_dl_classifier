@@ -37,7 +37,7 @@ pip install -e .
 To train the network, just prompt the `classify` command that will appear after installation, example below:
 
 ```
-classify config.json
+classify config/config.json
 ```
 
 The `config.json` is a configuration example. A description of each parameter is provided in the code. 
@@ -51,6 +51,12 @@ With the provided config file we reached over 95% accuracy for each slice which 
 
 ![](images/test_cm.png)
 ![](images/test_accuracy.png)
+
+To guess the contrast of a particular acquisition, prompt the `classify_acquisition` command that will appear after installation. It takes as input the path for the acquisition and fetches the best model obtained through training. Example below:
+
+```
+classify_acquisition path
+```
 
 ## Data
 
