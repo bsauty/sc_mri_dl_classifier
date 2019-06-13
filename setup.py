@@ -22,7 +22,7 @@ setup(
     install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'classify=classifier.main:run_main',
+            'train_classifier=classifier.main:run_main',
             'classify_acquisition=classifier.classify:run_main',
         ],
     },
