@@ -34,10 +34,10 @@ pip install -e .
 
 ## Training
 
-To train the network, just prompt the `classify` command that will appear after installation, example below:
+To train the network, just prompt the `train_classifier` command that will appear after installation, example below:
 
 ```
-classify config/config.json
+train_classifier config/config.json
 ```
 
 The `config.json` is a configuration example. A description of each parameter is provided in the code. 
