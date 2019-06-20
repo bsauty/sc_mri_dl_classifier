@@ -1,3 +1,8 @@
+:warning: This repo is not updated anymore and the latest version that is actually used has been moved [here](https://github.com/bsauty/sc_mri_modality_detection) ! :warning:
+
+
+
+
 # MRI Spinal Cord modality Classifier
 
 This is a repository for a generic tool of modality classification for MRI images. It is designed to learn from 6 classes (T1w, T2w, T2star, MToff_MTS, MTon_MTS and T1w_MTS) as described in the [spineGeneric protocol](https://github.com/sct-pipeline/spine-generic).
